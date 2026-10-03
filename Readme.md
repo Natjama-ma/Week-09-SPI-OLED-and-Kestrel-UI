@@ -79,7 +79,7 @@ flowchart LR
 6. **[06-Labsheet-09-1-SPI-OLED-Deconstructed-Bringup.md](06-Labsheet-09-1-SPI-OLED-Deconstructed-Bringup.md)** - **ใบงานที่ 9.1: การประกอบสร้างตัวขับจอแสดงผล SSD1306 ทีละชิ้นส่วนสู่ Hello World พร้อมการทำ Framebuffer Forensics**
 7. **[07-Labsheet-09-2-Kestrel-Calibration-and-Display-API.md](07-Labsheet-09-2-Kestrel-Calibration-and-Display-API.md)** - **ใบงานที่ 9.2: การพัฒนาเอนจินปรับเทียบเซนเซอร์และ API ควบคุมการแสดงผลบน Kestrel Web Server พร้อมการพิสูจน์หลักฐานเครือข่าย**
 8. **[08-Labsheet-09-3-End-to-End-IoT-Loop-and-Verification.md](08-Labsheet-09-3-End-to-End-IoT-Loop-and-Verification.md)** - **ใบงานที่ 9.3: การบูรณาการระบบวงปิดแบบครบวงจร และการตรวจพิสูจน์ความสอดคล้องของข้อมูล (Telemetry Co-Verification)**
-9. **[09-Labsheet-09-4-Troubleshooting-and-Fault-Clinic.md](09-Labsheet-09-4-Troubleshooting-and-Fault-Clinic.md)** - **ใบงานที่ 9.4: คลินิกวิเคราะห์และแก้ปัญหาความผิดพร่องของระบบ (Fault Injection & Diagnostic Forensics)**
+
 
 
 >[!INFO] **หมายเหตุ** 
