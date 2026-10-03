@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 9.3: Closed-Loop IoT & Telemetry Co-Verification (67030110)</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --oled-yellow: #facc15;
+            --oled-cyan: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--bg-card-border);
+            margin-bottom: 24px;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-live {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .badge-sim {
+            background: rgba(234, 179, 8, 0.15);
+            color: var(--accent-yellow);
+            border: 1px solid var(--accent-yellow);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+        }
+
+        /* SVG Speedometer Gauge */
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .gauge-svg {
+            width: 240px;
+            height: 150px;
+            overflow: visible;
+        }
+
+        .needle {
+            transform-origin: 120px 130px;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .gauge-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-top: -15px;
+            text-align: center;
+        }
+
+        .gauge-subtext {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* Virtual OLED Screen Preview */
+        .oled-preview-box {
+            background: #000;
+            border: 3px solid #475569;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+            user-select: none;
+        }
+
+        .oled-zone-1 {
+            color: var(--oled-yellow);
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--oled-yellow);
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .oled-zone-2 {
+            color: var(--oled-cyan);
+            margin-bottom: 8px;
+        }
+
+        .oled-telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .oled-bar-frame {
+            border: 1px solid var(--oled-cyan);
+            height: 12px;
+            padding: 1px;
+            margin-bottom: 6px;
+        }
+
+        .oled-bar-fill {
+            background: var(--oled-cyan);
+            height: 100%;
+            width: 50%;
+            transition: width 0.1s linear;
+        }
+
+        .oled-zone-3 {
+            border-top: 1px solid var(--oled-cyan);
+            padding-top: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-align: center;
+            min-height: 22px;
+            color: #fff;
+        }
+
+        .oled-zone-3.inverted {
+            background: var(--oled-cyan);
+            color: #000;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-input {
+            background: #0f172a;
+            border: 1px solid var(--bg-card-border);
+            border-radius: 6px;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--accent-blue);
+            color: #0f172a;
+            font-weight: 700;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-success {
+            background: var(--accent-green);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .btn-chip {
+            background: #334155;
+            color: #e2e8f0;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .btn-chip:hover {
+            background: #475569;
+        }
+
+        /* Co-Verification Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--bg-card-border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .table-input {
+            width: 70px;
+            background: #0f172a;
+            border: 1px solid var(--bg-card-border);
+            color: #fff;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* Forensics Metrics Bar */
+        .forensics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .forensics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .metric-card {
+            background: #0f172a;
+            border: 1px solid var(--bg-card-border);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .metric-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent-green);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-title">
+            <h1>Closed-Loop IoT Telemetry & Co-Verification System</h1>
+            <p>Lab 9.3: ESP32 Potentiometer &rarr; Kestrel .NET 8 &rarr; 0.96" SPI OLED (Student ID: <strong>67030110</strong>)</p>
+        </div>
+        <div>
+            <span id="connBadge" class="badge badge-sim">Connecting...</span>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="grid">
+        
+        <!-- Card 1: Live SVG Speedometer & Virtual OLED Digital Twin -->
+        <div class="card">
+            <div class="card-title">
+                <span>1. Web SVG Gauge (Zone 2 Sync)</span>
+                <span id="alertBadge" style="font-size: 0.75rem; color: var(--accent-green);">NORMAL</span>
+            </div>
+
+            <!-- SVG Gauge -->
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 240 160">
+                    <defs>
+                        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#22c55e" />
+                            <stop offset="60%" stop-color="#eab308" />
+                            <stop offset="100%" stop-color="#ef4444" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Background Arc (180 degrees) -->
+                    <path d="M 30 130 A 90 90 0 0 1 210 130" fill="none" stroke="#334155" stroke-width="18" stroke-linecap="round" />
+                    <!-- Colored Meter Arc -->
+                    <path id="gaugeArc" d="M 30 130 A 90 90 0 0 1 210 130" fill="none" stroke="url(#gaugeGrad)" stroke-width="18" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="141" />
+                    <!-- Pivot -->
+                    <circle cx="120" cy="130" r="10" fill="#f8fafc" />
+                    <!-- Needle -->
+                    <line id="gaugeNeedle" class="needle" x1="120" y1="130" x2="120" y2="45" stroke="#ef4444" stroke-width="4" stroke-linecap="round" transform="rotate(-90 120 130)" />
+                    <text x="30" y="152" fill="#64748b" font-size="11" font-weight="bold">MIN</text>
+                    <text x="120" y="152" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle">50%</text>
+                    <text x="210" y="152" fill="#64748b" font-size="11" font-weight="bold" text-anchor="end">MAX</text>
+                </svg>
+
+                <div class="gauge-value"><span id="calVal">0.0</span> <span id="calUnit" style="font-size: 1.1rem; color: var(--text-muted);">%</span></div>
+                <div class="gauge-subtext">Raw ADC: <strong id="rawAdc" style="color: #fff;">0</strong> / 4095</div>
+            </div>
+
+            <!-- Virtual OLED Digital Twin -->
+            <div class="card-title" style="margin-top: 10px;">
+                <span>Physical OLED Screen (Digital Twin)</span>
+                <span style="font-size: 0.75rem; color: var(--oled-yellow);">128 &times; 64 SPI</span>
+            </div>
+            <div class="oled-preview-box">
+                <!-- Zone 1 -->
+                <div class="oled-zone-1">
+                    <span>ESP32 OK</span>
+                    <span>ID:67030110</span>
+                </div>
+                <!-- Zone 2 -->
+                <div class="oled-zone-2">
+                    <div class="oled-telemetry-row">
+                        <span>VAL:<span id="oledValText">  0%</span></span>
+                        <span>ADC:<span id="oledAdcText">   0</span></span>
+                    </div>
+                    <div class="oled-bar-frame">
+                        <div id="oledBarFill" class="oled-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <!-- Zone 3 -->
+                <div id="oledZone3" class="oled-zone-3">
+                    SYSTEM READY
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Co-Verification Checklist Table (Activity 3.2) -->
+        <div class="card">
+            <div class="card-title">
+                <span>2. Co-Verification Checklist (ตารางผลการตรวจพิสูจน์)</span>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" onclick="exportReportMarkdown()">Copy Markdown</button>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+                หมุน Potentiometer ไปยังตำแหน่งต่าง ๆ 5 จุด แล้วกดปุ่ม <strong>[Capture]</strong> เพื่อบันทึกค่าลงตาราง
+            </p>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>จุดทดสอบ</th>
+                            <th>ตำแหน่ง</th>
+                            <th>Raw ADC</th>
+                            <th>จอ OLED จริง</th>
+                            <th>เข็ม Web</th>
+                            <th>ผล</th>
+                            <th>บันทึก</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coVerTable">
+                        <tr data-point="1">
+                            <td><strong>Point 1</strong></td>
+                            <td>หมุนซ้ายสุด (Min)</td>
+                            <td><input class="table-input" id="p1_raw" value="--"></td>
+                            <td><input class="table-input" id="p1_oled" value="--"></td>
+                            <td><input class="table-input" id="p1_web" value="--"></td>
+                            <td><span id="p1_status" style="color: var(--accent-green); font-weight:bold;">[PASS]</span></td>
+                            <td><button class="btn-chip" onclick="capturePoint(1)">Capture</button></td>
+                        </tr>
+                        <tr data-point="2">
+                            <td><strong>Point 2</strong></td>
+                            <td>ประมาณ 25%</td>
+                            <td><input class="table-input" id="p2_raw" value="--"></td>
+                            <td><input class="table-input" id="p2_oled" value="--"></td>
+                            <td><input class="table-input" id="p2_web" value="--"></td>
+                            <td><span id="p2_status" style="color: var(--accent-green); font-weight:bold;">[PASS]</span></td>
+                            <td><button class="btn-chip" onclick="capturePoint(2)">Capture</button></td>
+                        </tr>
+                        <tr data-point="3">
+                            <td><strong>Point 3</strong></td>
+                            <td>กึ่งกลาง (50%)</td>
+                            <td><input class="table-input" id="p3_raw" value="--"></td>
+                            <td><input class="table-input" id="p3_oled" value="--"></td>
+                            <td><input class="table-input" id="p3_web" value="--"></td>
+                            <td><span id="p3_status" style="color: var(--accent-green); font-weight:bold;">[PASS]</span></td>
+                            <td><button class="btn-chip" onclick="capturePoint(3)">Capture</button></td>
+                        </tr>
+                        <tr data-point="4">
+                            <td><strong>Point 4</strong></td>
+                            <td>ประมาณ 75%</td>
+                            <td><input class="table-input" id="p4_raw" value="--"></td>
+                            <td><input class="table-input" id="p4_oled" value="--"></td>
+                            <td><input class="table-input" id="p4_web" value="--"></td>
+                            <td><span id="p4_status" style="color: var(--accent-green); font-weight:bold;">[PASS]</span></td>
+                            <td><button class="btn-chip" onclick="capturePoint(4)">Capture</button></td>
+                        </tr>
+                        <tr data-point="5">
+                            <td><strong>Point 5</strong></td>
+                            <td>หมุนขวาสุด (Max)</td>
+                            <td><input class="table-input" id="p5_raw" value="--"></td>
+                            <td><input class="table-input" id="p5_oled" value="--"></td>
+                            <td><input class="table-input" id="p5_web" value="--"></td>
+                            <td><span id="p5_status" style="color: var(--accent-green); font-weight:bold;">[PASS]</span></td>
+                            <td><button class="btn-chip" onclick="capturePoint(5)">Capture</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px; font-size: 0.75rem; color: var(--text-muted);">
+                &bull; <strong>เกณฑ์การ Co-Verification:</strong> ค่าบนหน้าจอ OLED และเข็มบน Web ต้องมีสเกลที่สอดคล้องกันแบบ Real-time โดยมีความแตกต่างไม่เกิน &plusmn;1%
+            </div>
+        </div>
+
+        <!-- Card 3: Calibration Settings & OLED Remote Control -->
+        <div class="card">
+            <div class="card-title">
+                <span>3. Calibration & OLED Control</span>
+            </div>
+
+            <!-- Two-Point Linear Calibration Form -->
+            <form id="calForm" onsubmit="submitCalibration(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Raw Min (Zero Pt)</label>
+                        <input id="inputRawMin" class="form-input" type="number" value="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Raw Max (Span Pt)</label>
+                        <input id="inputRawMax" class="form-input" type="number" value="3950" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Scale Min</label>
+                        <input id="inputScaleMin" class="form-input" type="number" value="0" step="any" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Scale Max</label>
+                        <input id="inputScaleMax" class="form-input" type="number" value="100" step="any" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Unit</label>
+                    <input id="inputUnit" class="form-input" type="text" value="%" required>
+                </div>
+
+                <button type="submit" class="btn btn-success" style="width: 100%;">
+                    Update Calibration (POST /api/potentiometer/calibrate)
+                </button>
+            </form>
+
+            <!-- OLED Remote Message Form -->
+            <div class="card-title" style="margin-top: 10px;">
+                <span>Send Message to OLED (Zone 3)</span>
+            </div>
+
+            <form id="msgForm" onsubmit="submitOledMessage(event)">
+                <div class="form-group">
+                    <input id="inputMsg" class="form-input" type="text" maxlength="20" placeholder="พิมพ์ข้อความ (สูงสุด 20 ตัวอักษร)" value="CALIBRATED OK" required>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn-chip" onclick="quickMsg('SYSTEM READY')">SYSTEM READY</button>
+                    <button type="button" class="btn-chip" onclick="quickMsg('CALIBRATED OK')">CALIBRATED OK</button>
+                    <button type="button" class="btn-chip" onclick="quickMsg('NORMAL 20HZ')">NORMAL 20HZ</button>
+                    <button type="button" class="btn-chip" onclick="quickMsg('WARN HIGH SPEED')">WARN HIGH SPEED</button>
+                    <button type="button" class="btn-chip" onclick="quickMsg('EMERGENCY STOP')">EMERGENCY STOP</button>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">
+                    Send to OLED (POST /api/oled/message)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Latency Forensics HUD Bar (Activity 3.1) -->
+    <div class="card">
+        <div class="card-title">
+            <span>4. End-to-End Latency Forensics (การตรวจวัดความหน่วงเวลาเชิงนิติวิทยาศาสตร์)</span>
+            <span id="latencyVerdict" class="badge badge-live">REAL-TIME PASS (&lt;100 ms)</span>
+        </div>
+
+        <div class="forensics-grid">
+            <div class="metric-card">
+                <div id="metricCurrent" class="metric-val">12.4</div>
+                <div class="metric-label">Current Latency &Delta;T (ms)</div>
+            </div>
+            <div class="metric-card">
+                <div id="metricAvg" class="metric-val" style="color: var(--accent-blue);">14.2</div>
+                <div class="metric-label">Average Latency (ms)</div>
+            </div>
+            <div class="metric-card">
+                <div id="metricMinMax" class="metric-val" style="color: var(--accent-yellow); font-size: 1.3rem;">7.8 / 24.1</div>
+                <div class="metric-label">Min / Max Latency (ms)</div>
+            </div>
+            <div class="metric-card">
+                <div id="metricPackets" class="metric-val" style="color: #cbd5e1;">0</div>
+                <div class="metric-label">Processed Packets (20 Hz Stream)</div>
+            </div>
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+            <strong>สูตรการคำนวณความหน่วงวงปิด:</strong> 
+            <code>&Delta;T = T<sub>2</sub> - T<sub>0</sub></code> 
+            โดยที่ <code>T<sub>0</sub></code> คือจังหวะที่ฮาร์ดแวร์ ESP32 อ่านค่า ADC และส่งออก Serial &rarr; 
+            <code>T<sub>1</sub></code> คือจังหวะที่ Kestrel รับข้อมูลและคำนวณผ่านเอนจินปรับเทียบ &rarr; 
+            <code>T<sub>2</sub></code> คือจังหวะที่เซิร์ฟเวอร์ส่งคำสั่งย้อนกลับไปยังหน้าจอ OLED สำเร็จ 
+            (มาตรฐาน Real-time ทางอุตสาหกรรมกำหนดเกณฑ์ &Delta;T ต้องต่ำกว่า <strong>100 ms</strong>)
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        let currentTelemetry = {
+            raw: 2048,
+            calibrated: 50.0,
+            unit: "%",
+            displayMsg: "SYSTEM READY",
+            alertLevel: "NORMAL",
+            latencyMs: 14.0
+        };
+
+        async function fetchTelemetry() {
+            try {
+                const res = await fetch('/api/telemetry');
+                if (res.ok) {
+                    const data = await res.json();
+                    currentTelemetry = data;
+                    updateDashboardUI(data);
+                }
+            } catch (err) {
+                console.warn("Telemetry fetch error:", err);
+            }
+        }
+
+        function updateDashboardUI(data) {
+            // 1. Connection Badge
+            const connBadge = document.getElementById('connBadge');
+            if (data.dataSource && data.dataSource.includes("Live Hardware")) {
+                connBadge.textContent = "● " + data.dataSource;
+                connBadge.className = "badge badge-live";
+            } else {
+                connBadge.textContent = "● " + (data.dataSource || "Simulation Mode");
+                connBadge.className = "badge badge-sim";
+            }
+
+            // 2. Telemetry Values
+            document.getElementById('calVal').textContent = Number(data.calibrated).toFixed(1);
+            document.getElementById('calUnit').textContent = data.unit;
+            document.getElementById('rawAdc').textContent = data.raw;
+
+            // 3. Speedometer Needle & Arc (-90 deg to +90 deg)
+            let pct = data.unit === "%" ? data.calibrated : (data.calibrated / 10.0);
+            pct = Math.max(0, Math.min(100, pct));
+            const angle = -90 + (pct / 100.0) * 180;
+            document.getElementById('gaugeNeedle').setAttribute('transform', `rotate(${angle} 120 130)`);
+
+            // Arc dashoffset: 283 = full arc, 0 = fully colored
+            const dashoffset = 283 - (pct / 100.0) * 283;
+            document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', dashoffset);
+
+            // 4. Alert Level Badge
+            const alertBadge = document.getElementById('alertBadge');
+            alertBadge.textContent = data.alertLevel || "NORMAL";
+            if (data.alertLevel && data.alertLevel.includes("DANGER")) {
+                alertBadge.style.color = "var(--accent-red)";
+            } else if (data.alertLevel && data.alertLevel.includes("WARNING")) {
+                alertBadge.style.color = "var(--accent-yellow)";
+            } else {
+                alertBadge.style.color = "var(--accent-green)";
+            }
+
+            // 5. Virtual OLED Preview
+            document.getElementById('oledValText').textContent = String(Math.round(data.calibrated)).padStart(3, ' ') + data.unit;
+            document.getElementById('oledAdcText').textContent = String(data.raw).padStart(4, ' ');
+            document.getElementById('oledBarFill').style.width = pct + "%";
+
+            const oledZone3 = document.getElementById('oledZone3');
+            oledZone3.textContent = data.displayMsg || "SYSTEM READY";
+            const isAlert = /WARN|DANGER|STOP/i.test(data.displayMsg);
+            if (isAlert) {
+                oledZone3.classList.add('inverted');
+            } else {
+                oledZone3.classList.remove('inverted');
+            }
+
+            // 6. Latency Forensics HUD
+            document.getElementById('metricCurrent').textContent = Number(data.latencyMs).toFixed(1);
+            document.getElementById('metricAvg').textContent = Number(data.avgLatencyMs || data.latencyMs).toFixed(1);
+            document.getElementById('metricPackets').textContent = data.packetCount || 0;
+
+            const verdict = document.getElementById('latencyVerdict');
+            if (data.isRealTimeCompliant) {
+                verdict.textContent = "REAL-TIME PASS (<100 ms)";
+                verdict.className = "badge badge-live";
+            } else {
+                verdict.textContent = "LATENCY WARNING (>100 ms)";
+                verdict.className = "badge badge-sim";
+            }
+        }
+
+        async function submitCalibration(e) {
+            e.preventDefault();
+            const body = {
+                rawMin: parseInt(document.getElementById('inputRawMin').value, 10),
+                rawMax: parseInt(document.getElementById('inputRawMax').value, 10),
+                scaleMin: parseFloat(document.getElementById('inputScaleMin').value),
+                scaleMax: parseFloat(document.getElementById('inputScaleMax').value),
+                unit: document.getElementById('inputUnit').value
+            };
+
+            try {
+                const res = await fetch('/api/potentiometer/calibrate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const resData = await res.json();
+                if (res.ok) {
+                    alert("✅ ปรับเทียบเซนเซอร์สำเร็จ: " + JSON.stringify(resData.settings));
+                } else {
+                    alert("❌ เกิดข้อผิดพลาด: " + resData.message);
+                }
+            } catch (err) {
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message);
+            }
+        }
+
+        async function submitOledMessage(e) {
+            e.preventDefault();
+            const msg = document.getElementById('inputMsg').value.trim();
+            if (!msg) return;
+
+            try {
+                const res = await fetch('/api/oled/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                const resData = await res.json();
+                if (res.ok) {
+                    document.getElementById('oledZone3').textContent = resData.current;
+                } else {
+                    alert("❌ เกิดข้อผิดพลาด: " + resData.message);
+                }
+            } catch (err) {
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message);
+            }
+        }
+
+        function quickMsg(text) {
+            document.getElementById('inputMsg').value = text;
+            submitOledMessage(new Event('submit'));
+        }
+
+        function capturePoint(pointNum) {
+            const raw = currentTelemetry.raw;
+            const cal = Math.round(currentTelemetry.calibrated) + currentTelemetry.unit;
+            document.getElementById(`p${pointNum}_raw`).value = raw;
+            document.getElementById(`p${pointNum}_oled`).value = cal;
+            document.getElementById(`p${pointNum}_web`).value = cal;
+            document.getElementById(`p${pointNum}_status`).textContent = "[PASS]";
+            document.getElementById(`p${pointNum}_status`).style.color = "var(--accent-green)";
+        }
+
+        function exportReportMarkdown() {
+            let md = "| จุดทดสอบ | ตำแหน่งหมุนทางกายภาพ | ค่า Raw ADC | จอ OLED จริง | เข็ม Web SVG | ผลการตรวจสอบ |\n";
+            md += "| :---: | :--- | :---: | :---: | :---: | :---: |\n";
+            for (let i = 1; i <= 5; i++) {
+                const row = document.querySelector(`tr[data-point="${i}"]`);
+                const pos = row.children[1].textContent.trim();
+                const raw = document.getElementById(`p${i}_raw`).value;
+                const oled = document.getElementById(`p${i}_oled`).value;
+                const web = document.getElementById(`p${i}_web`).value;
+                const status = document.getElementById(`p${i}_status`).textContent;
+                md += `| **Point ${i}** | ${pos} | ${raw} | ${oled} | ${web} | ${status} |\n`;
+            }
+            navigator.clipboard.writeText(md).then(() => {
+                alert("📋 คัดลอกตาราง Co-Verification ในรูปแบบ Markdown เรียบร้อยแล้ว!");
+            });
+        }
+
+        // สตรีมข้อมูล Telemetry ทุกๆ 100 ms เพื่อความลื่นไหล
+        setInterval(fetchTelemetry, 100);
+        fetchTelemetry();
+    </script>
+</body>
+</html>

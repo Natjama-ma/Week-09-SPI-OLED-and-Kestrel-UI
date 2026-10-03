@@ -1,0 +1,39 @@
+{
+  "Version": 1,
+  "Hash": "04je7SsqFiYf6MMlPsG8HdJTcGHePf/4xSUGw6U0JZg=",
+  "Source": "ESP32.Kestrel.Webserver",
+  "BasePath": "_content/ESP32.Kestrel.Webserver",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "ESP32.Kestrel.Webserver\\wwwroot",
+      "Source": "ESP32.Kestrel.Webserver",
+      "ContentRoot": "D:\\IOT\\Week-09-SPI-OLED-and-Kestrel-UI\\67030110\\Lab9-3_End_to_End_IoT\\Kestrel_Server\\wwwroot\\",
+      "BasePath": "_content/ESP32.Kestrel.Webserver",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "D:\\IOT\\Week-09-SPI-OLED-and-Kestrel-UI\\67030110\\Lab9-3_End_to_End_IoT\\Kestrel_Server\\wwwroot\\index.html",
+      "SourceId": "ESP32.Kestrel.Webserver",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\IOT\\Week-09-SPI-OLED-and-Kestrel-UI\\67030110\\Lab9-3_End_to_End_IoT\\Kestrel_Server\\wwwroot\\",
+      "BasePath": "_content/ESP32.Kestrel.Webserver",
+      "RelativePath": "index.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\index.html"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "D:\\IOT\\Week-09-SPI-OLED-and-Kestrel-UI\\67030110\\Lab9-3_End_to_End_IoT\\Kestrel_Server\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.ESP32.Kestrel.Webserver.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.ESP32.Kestrel.Webserver.props",
+      "PackagePath": "build\\ESP32.Kestrel.Webserver.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.ESP32.Kestrel.Webserver.props",
+      "PackagePath": "buildMultiTargeting\\ESP32.Kestrel.Webserver.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.ESP32.Kestrel.Webserver.props",
+      "PackagePath": "buildTransitive\\ESP32.Kestrel.Webserver.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
